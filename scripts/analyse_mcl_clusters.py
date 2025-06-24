@@ -24,16 +24,16 @@ def cluster_tb_stats(cluster_file, inflation):
     print(f'{inflation:<4s}{str(nclusters):<9s}{str(round(mean_tm, 2)):<14s}{str(n_clusters_1):<25s}')
 
 
-def clusters_table(cluster_files_format, input_dir):
+def clusters_table(cluster_files_format, input_dir, reverse = False):
     folder = Path(input_dir)
     cluster_files = folder.glob(f'*{cluster_files_format}*')
     if cluster_files_format.startswith('out'):
         cluster_files_inflation = [(str(cluster_file).split('.')[-1], cluster_file) for cluster_file in cluster_files]
-        cluster_files_inflation = sorted(cluster_files_inflation, key=lambda x: x[0])
+        cluster_files_inflation = sorted(cluster_files_inflation, key=lambda x: x[0], reverse = reverse)
         print('I   Nclusters')
     else:
         cluster_files_inflation = [(str(cluster_file).split('/')[-1].split('_')[0], cluster_file) for cluster_file in cluster_files]
-        cluster_files_inflation = sorted(cluster_files_inflation, key=lambda x: x[0])
+        cluster_files_inflation = sorted(cluster_files_inflation, key=lambda x: x[0], reverse = reverse)
         print('I   Nclusters  Mean  TM-scores  Ncluster with one protein')
     inflation_clusters_dict = {}
     for inflation, cluster_file in cluster_files_inflation:
@@ -65,7 +65,6 @@ def get_mean_node_tm_dict(graph):
         if edges and n_nodes > 1:
             values = [data['weight'] for _, _, data in edges]
             mean_values[node] = sum(values) / (n_nodes - 1)
-            print(sum(values), len(values), n_nodes, mean_values[node])
         else:
             mean_values[node] = 0
     # Output the mean value for all nodes 
@@ -91,7 +90,6 @@ def find_outliers(data_dict):
 def get_ref_structure_cluster(main_graph, cluster):
     #get dict with mean tm scores with all other proteins for each protein in the cluster
     cluster_graph = main_graph.subgraph(cluster)
-    print(f'clusters edges {len(cluster_graph.edges())}, {len(main_graph.edges())}')
     mean_t_dict = get_mean_node_tm_dict(cluster_graph)
     # get outlier values :
     outliers = find_outliers(mean_t_dict)
@@ -109,12 +107,13 @@ def relate_ref_structures_between_clusterings(cluster_files_format, input_dir, m
     # and a list of nodes from a cluster file (mcl) to find the reference of each cluster based on the highest mean tm score for the cluster
     main_graph = create_graph(main_graph_file)
     print(f'number of proteins : {main_graph.number_of_nodes()}')
-    inflation_clusters_dict = clusters_table(cluster_files_format, input_dir)
+    inflation_clusters_dict = clusters_table(cluster_files_format, input_dir, reverse = True)
     inflation_clusters_ref_dict = {}
     if not inflations :
         inflations = [inflation for inflation, clusters in inflation_clusters_dict.items()]
     else: inflations = inflations.split(',')
-    inflations = sorted(inflations)
+    inflations = sorted(inflations, reverse = True)
+    print(inflations[-1])
     for inflation, clusters in inflation_clusters_dict.items():
         cluster_ref_list = [(cluster, get_ref_structure_cluster(main_graph, cluster)) for cluster in clusters]
         inflation_clusters_ref_dict[inflation]=cluster_ref_list
@@ -135,13 +134,20 @@ def relate_ref_structures_between_clusterings(cluster_files_format, input_dir, m
 
     for i in range(len(inflations)-1):
         print(inflations[i+1], inflations[i])
-        for cluster_1, (reference_1, _, _, _) in inflation_clusters_ref_dict[inflations[i+1]]:
-            for cluster_2, (reference_2, _, _, _) in inflation_clusters_ref_dict[inflations[i]]:
-                if reference_1 in cluster_2 and reference_1 != reference_2:
-                    G.add_edge(reference_2, reference_1, weight=len(cluster_1))
-                    break
-                elif reference_1 == reference_2:
-                    break
+        for cluster_1, (reference_1, _, _, _) in inflation_clusters_ref_dict[inflations[i]]:
+            for cluster_2, (reference_2, _, _, _) in inflation_clusters_ref_dict[inflations[i+1]]:
+                if reference_1 in cluster_2:
+                    G.add_node(f'{reference_1}_{inflations[i]}', size=len(cluster_1))
+                    if f'{reference_2}_{inflations[i+1]}' not in G.nodes():
+                        G.add_node(f'{reference_2}_{inflations[i+1]}', size=len(cluster_2))
+                    G.add_edge(f'{reference_2}_{inflations[i+1]}', f'{reference_1}_{inflations[i]}')
+    
+    G.add_node('artificial_central_node', size=10)
+    print('artificial', inflations[-1], len(inflation_clusters_ref_dict[inflations[-1]]))
+    for cluster, (reference, _, _, _) in inflation_clusters_ref_dict[inflations[-1]]:
+        if f'{reference}_{inflations[-1]}' not in G.nodes():
+            G.add_node(f'{reference}_{inflations[-1]}', size=len(cluster))
+        G.add_edge('artificial_central_node', f'{reference}_{inflations[-1]}')
     nx.write_graphml(G, output)
 
 def align_queries_to_target(target, queries, folder, max_queries):

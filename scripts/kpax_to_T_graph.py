@@ -19,8 +19,8 @@ def list_kpax_logs(kpax_folder):
 
 def process(kpax_folder, output_name):
     logs = list_kpax_logs(kpax_folder)
-    d_outfile = open(f'{output_name}_all_directed.tsv', "w")
-    a_outfile = open(f'{output_name}_filt_adjacency.tsv', "w")
+    d_outfile = open(f'{output_name}_all_directed.tsv', "w") # this file will contain all edges between all proteins (limited to 1000 edges per prot)
+    a_outfile = open(f'{output_name}_filt_adjacency.tsv', "w") # this file will be used for clustering
     files_treated = 0
     pairs_treated= {}
     for log in logs:
@@ -43,25 +43,30 @@ def process(kpax_folder, output_name):
                 t_score = line[5]
                 t_domain = line[14].split('[')[0]
                 t_length = int(line[11])
-                # fill directed graph abc file with pair and t score
+                aligned_aa = int(line[7]) #number of aligned aa
+                aligned_identity = int(line[9]) #number of identity aa for aligned seq
+                if aligned_aa != 0: 
+                    identity = aligned_identity*100/aligned_aa
+                else: identity = 0
+                # fill directed graph abc file with pair, t score, len and aligned sequence identity %
                 # fill adjacency with only pairs having TM score > 0.45 and q and t length > 40
                 # check if pair has already been seen and choose which TM score to keep (highest)
-                if (t_domain, q_domain) in pairs_treated.keys() and pairs_treated[(t_domain, q_domain)] < t_score:
+                if (t_domain, q_domain) in pairs_treated.keys() and pairs_treated[(t_domain, q_domain)][0] < t_score:
                     if float(t_score) > 0.45 and t_length > 40:
                         a_outfile.write(f'{q_domain} {t_domain} {t_score}\n')
-                    d_outfile.write(f'{q_domain} {t_domain} {t_score}\n')
+                    d_outfile.write(f'{q_domain} {t_domain} {t_score} {identity}\n')
                     pairs_treated.pop((t_domain, q_domain))
                 elif (t_domain, q_domain) in pairs_treated.keys():
                     if float(t_score) > 0.45 and t_length > 40:
-                        a_outfile.write(f'{t_domain} {q_domain} {pairs_treated[(t_domain, q_domain)]}\n')
-                    d_outfile.write(f'{t_domain} {q_domain} {t_score}\n')
+                        a_outfile.write(f'{t_domain} {q_domain} {pairs_treated[(t_domain, q_domain)][0]}\n')
+                    d_outfile.write(f'{t_domain} {q_domain} {t_score} {identity}\n')
                     pairs_treated.pop((t_domain, q_domain))
-                else: pairs_treated[(q_domain, t_domain)] = t_score
+                else: pairs_treated[(q_domain, t_domain)] = (t_score, identity)
             else : continue
-    for (q_domain, t_domain), t_score in pairs_treated.items():
+    for (q_domain, t_domain), (t_score, identity) in pairs_treated.items():
         if float(t_score) > 0.45 and t_length > 40:
             a_outfile.write(f'{q_domain} {t_domain} {t_score}\n')
-        d_outfile.write(f'{q_domain} {t_domain} {t_score}\n')
+        d_outfile.write(f'{q_domain} {t_domain} {t_score} {identity}\n')
         log_file.close()
     print(f'files treated :{files_treated}')
     a_outfile.close()

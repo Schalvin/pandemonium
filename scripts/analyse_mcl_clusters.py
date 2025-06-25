@@ -5,6 +5,7 @@ from pathlib import Path
 from statistics import mean
 import networkx as nx
 import pandas as pd
+from natsort import natsorted
 from sklearn_extra.cluster import KMedoids
 
 def cluster_tb_stats(cluster_file, inflation):
@@ -29,12 +30,12 @@ def clusters_table(cluster_files_format, input_dir, reverse = False):
     cluster_files = folder.glob(f'*{cluster_files_format}*')
     if cluster_files_format.startswith('out'):
         cluster_files_inflation = [(str(cluster_file).split('.')[-1], cluster_file) for cluster_file in cluster_files]
-        cluster_files_inflation = sorted(cluster_files_inflation, key=lambda x: x[0], reverse = reverse)
+        cluster_files_inflation = natsorted(cluster_files_inflation, key=lambda x: x[0], reverse = reverse)
         print('I   Nclusters')
     else:
         cluster_files_inflation = [(str(cluster_file).split('/')[-1].split('_')[0], cluster_file) for cluster_file in cluster_files]
-        cluster_files_inflation = sorted(cluster_files_inflation, key=lambda x: x[0], reverse = reverse)
-        print('I   Nclusters  Mean  TM-scores  Ncluster with one protein')
+        cluster_files_inflation = natsorted(cluster_files_inflation, key=lambda x: x[0], reverse = reverse)
+        print('I   Nclusters  Mean TM-scores  Ncluster with one protein')
     inflation_clusters_dict = {}
     for inflation, cluster_file in cluster_files_inflation:
         if cluster_files_format.startswith('out'):
@@ -112,7 +113,7 @@ def relate_ref_structures_between_clusterings(cluster_files_format, input_dir, m
     if not inflations :
         inflations = [inflation for inflation, clusters in inflation_clusters_dict.items()]
     else: inflations = inflations.split(',')
-    inflations = sorted(inflations, reverse = True)
+    inflations = natsorted(inflations, reverse = True)
     print(inflations[-1])
     for inflation, clusters in inflation_clusters_dict.items():
         cluster_ref_list = [(cluster, get_ref_structure_cluster(main_graph, cluster)) for cluster in clusters]

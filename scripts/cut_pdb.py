@@ -55,22 +55,24 @@ def update_corr_tb(corr_table, domains_dict, sword_domain, classification, tresh
     return corr_table
 
 def domain_corr(info_table, treshold, output):
-    table = pd.read_csv(info_table, sep = '\t', usecols=["PDB", "SWORD_renum_delineation",  'ECOD_domain_ID', "ECOD_renum_delineation", 'CATH_ID', "CATH_renum_delineation", "SCOP_renum_delineation",  'SCOP_class', 'SCOP_fold', 'SCOP_supfamily', 'SCOP_family'])
-    correspondence_table = {'SWORD2':[], 'SWORD2_renum_delim':[], 'ECOD':[], 'ECOD_renum_delim':[], 'SCOP':[], 'SCOP_renum_delim':[], 'CATH':[], 'CATH_renum_delim':[]}
+    table = pd.read_csv(info_table, sep = '\t', usecols=["PDB", "SWORD_renum_delineation",  'ECOD_ID', "ECOD_renum_delineation", 'CATH_class', 'CATH_architecture', 'CATH_topology',
+       'CATH_supfamily', "CATH_renum_delineation", "SCOP_renum_delineation",  'SCOP_class', 'SCOP_fold', 'SCOP_supfamily', 'SCOP_family', 'length'])
+    correspondence_table = {'SWORD2':[], 'SWORD2_renum_delim':[], 'ECOD':[], 'ECOD_renum_delim':[], 'SCOP':[], 'SCOP_renum_delim':[], 'CATH':[], 'CATH_renum_delim':[], 'length':[]}
     for prot in table.itertuples():
         SWORD2_domains = [[tuple(map(int, re.split(r'(?<=\d)-', items))) for items in item.split(',')] for item in prot.SWORD_renum_delineation.split(', ')]
-        ECOD_domains = {domain_id: [tuple(map(int, re.split(r'(?<=\d)-', items))) for items in item.split(',')] for domain_id, item in zip(prot.ECOD_domain_ID.split(', '), prot.ECOD_renum_delineation.split(', '))}
-        if prot.CATH_ID != '-':
-            CATH_domains = {domain_id: [tuple(map(int, re.split(r'(?<=\d)-', items))) for items in item.split(',')] for domain_id, item in zip(prot.CATH_ID.split(', '), prot.CATH_renum_delineation.split(', '))}
+        ECOD_domains = {domain_id: [tuple(map(int, re.split(r'(?<=\d)-', items))) for items in item.split(',')] for domain_id, item in zip(prot.ECOD_ID.split(', '), prot.ECOD_renum_delineation.split(', '))}
+        if prot.CATH_renum_delineation != '-':
+            CATH_domains = {f'{dom_class.replace('"','')}.{architecture.replace('"','')}.{topology.replace('"','')}.{supfamily.replace('"','')}': [tuple(map(int, re.split(r'(?<=\d)-', items))) for items in item.split(',')] for dom_class, architecture, topology, supfamily, item in zip(prot.CATH_class.split('", "'), prot.CATH_architecture.split('", "'), prot.CATH_topology.split('", "'), prot.CATH_supfamily.split('", "'), prot.CATH_renum_delineation.split(', '))}
             print(CATH_domains)
         if prot.SCOP_renum_delineation != '-':
-            SCOP_domains = {f'{dom_class}.{fold}.{supfamily}.{family}': [tuple(map(int, re.split(r'(?<=\d)-', items))) for items in item.split(',')] for dom_class, fold, supfamily, family, item in zip(prot.SCOP_class.split(', '), prot.SCOP_fold.split(', '), prot.SCOP_supfamily.split(', '), prot.SCOP_family.split(', '), prot.SCOP_renum_delineation.split(', '))}
+            SCOP_domains = {f'{dom_class.replace('"','')}.{fold.replace('"','')}.{supfamily.replace('"','')}.{family.replace('"','')}': [tuple(map(int, re.split(r'(?<=\d)-', items))) for items in item.split(',')] for dom_class, fold, supfamily, family, item in zip(prot.SCOP_class.split('", "'), prot.SCOP_fold.split('", "'), prot.SCOP_supfamily.split('", "'), prot.SCOP_family.split('", "'), prot.SCOP_renum_delineation.split(', '))}
             print(SCOP_domains)
         for idx, sword_domain in enumerate(SWORD2_domains):
             domain_name = f"{prot.PDB}_SWORD2d{idx + 1}"
             correspondence_table['SWORD2'].append(domain_name)
             correspondence_table['SWORD2_renum_delim'].append(sword_domain)
-            #ECOD
+            total_length = sum(end - start + 1 for start, end in sword_domain)
+            correspondence_table['length'].append(total_length)
             correspondence_table = update_corr_tb(correspondence_table, ECOD_domains, sword_domain, 'ECOD', treshold)
             correspondence_table = update_corr_tb(correspondence_table, SCOP_domains, sword_domain, 'SCOP', treshold)
             correspondence_table = update_corr_tb(correspondence_table, CATH_domains, sword_domain, 'CATH', treshold)

@@ -9,3 +9,4 @@
 
 #### Choice of reference domains in ATLAS protein database
 - Step 5 : Analyse mcl clusters, define reference structures, 3 medoids, outliers for each cluster, output a directed graph relating all cluster references (scripts/analyse_mcl_clusters.py)
+- Step 6 : Align kmedoïds and outliers to reference structure of clusters for given inflation level (scripts/analyse_mcl_clusters.py)

@@ -3,9 +3,9 @@
 ### Dependencies :
 - kpax needs to be installed seperately (compatibile with version 5.0.5) [here](https://kpax.loria.fr/download.php)
 - all remaining packages are available through provided pixi environnement by running :
-`cd pixi
-pixi shell
-cd ../`
+`cd pixi`
+`pixi shell`
+`cd ../`
 
 
 ### Steps followed :

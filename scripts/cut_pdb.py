@@ -62,10 +62,10 @@ def domain_corr(info_table, treshold, output):
         SWORD2_domains = [[tuple(map(int, re.split(r'(?<=\d)-', items))) for items in item.split(',')] for item in prot.SWORD_renum_delineation.split(', ')]
         ECOD_domains = {domain_id: [tuple(map(int, re.split(r'(?<=\d)-', items))) for items in item.split(',')] for domain_id, item in zip(prot.ECOD_ID.split(', '), prot.ECOD_renum_delineation.split(', '))}
         if prot.CATH_renum_delineation != '-':
-            CATH_domains = {f'{dom_class.replace('"','')}.{architecture.replace('"','')}.{topology.replace('"','')}.{supfamily.replace('"','')}': [tuple(map(int, re.split(r'(?<=\d)-', items))) for items in item.split(',')] for dom_class, architecture, topology, supfamily, item in zip(prot.CATH_class.split('", "'), prot.CATH_architecture.split('", "'), prot.CATH_topology.split('", "'), prot.CATH_supfamily.split('", "'), prot.CATH_renum_delineation.split(', '))}
+            CATH_domains = {f'{dom_class}.{architecture}.{topology}.{supfamily}': [tuple(map(int, re.split(r'(?<=\d)-', items))) for items in item.split(',')] for dom_class, architecture, topology, supfamily, item in zip(prot.CATH_class.split('", "'), prot.CATH_architecture.split('", "'), prot.CATH_topology.split('", "'), prot.CATH_supfamily.split('", "'), prot.CATH_renum_delineation.split(', '))}
             print(CATH_domains)
         if prot.SCOP_renum_delineation != '-':
-            SCOP_domains = {f'{dom_class.replace('"','')}.{fold.replace('"','')}.{supfamily.replace('"','')}.{family.replace('"','')}': [tuple(map(int, re.split(r'(?<=\d)-', items))) for items in item.split(',')] for dom_class, fold, supfamily, family, item in zip(prot.SCOP_class.split('", "'), prot.SCOP_fold.split('", "'), prot.SCOP_supfamily.split('", "'), prot.SCOP_family.split('", "'), prot.SCOP_renum_delineation.split(', '))}
+            SCOP_domains = {f'{dom_class}.{fold}.{supfamily}.{family}': [tuple(map(int, re.split(r'(?<=\d)-', items))) for items in item.split(',')] for dom_class, fold, supfamily, family, item in zip(prot.SCOP_class.split('", "'), prot.SCOP_fold.split('", "'), prot.SCOP_supfamily.split('", "'), prot.SCOP_family.split('", "'), prot.SCOP_renum_delineation.split(', '))}
             print(SCOP_domains)
         for idx, sword_domain in enumerate(SWORD2_domains):
             domain_name = f"{prot.PDB}_SWORD2d{idx + 1}"

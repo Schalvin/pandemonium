@@ -10,10 +10,11 @@ def run_kpax_pairs(pivot_pdb, query_pdb, output_dir):
     # set log file name based on pivot name
     pivot_name = str(pivot_pdb).split('/')[-1].split('.')[0] + '.log'
     log_file = os.path.join(output_dir, pivot_name)
+    n_prot = len(query_pdb)
     if os.path.exists(log_file) and os.stat(log_file).st_size > 370000:
         print('skip', flush = True)
         return
-    command = ["kpax", "-nopdb", "-top=1000", "-show=1000", "-sort=T"] + [pivot_pdb] + query_pdb
+    command = ["kpax", "-nopdb", f"-top={n_prot}", f"-show={n_prot}", "-sort=T"] + [pivot_pdb] + query_pdb
 
     with open(log_file, 'w') as log:
         try:
